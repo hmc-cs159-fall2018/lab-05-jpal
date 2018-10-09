@@ -1,10 +1,12 @@
 import spacy
 from EditDistance import EditDistanceFinder
 from LanguageModel import LanguageModel
+import string
+
 
 class SpellChecker(object):
 
-    def __init__(self, channel_model=None, language_model=None, max_distance):
+    def __init__(self, max_distance, channel_model=None, language_model=None):
         self.channel_model = channel_model
         self.language_model = language_model
         self.max_distance = max_distance
@@ -23,7 +25,7 @@ class SpellChecker(object):
         return (score(prev_word, focus_word) + score(focus_word, next_word))/(2.0)
 
     def unigram_score(self, word):
-        return self.language_model.unigram_prob(w)
+        return self.language_model.unigram_prob(word)
 
     def inserts(self, word):
         l = []
@@ -56,7 +58,7 @@ class SpellChecker(object):
             source = list(set(flat))
         return source
 
-    def check_sentence(sentence, fallback=False):
+    def check_sentence(self, sentence, fallback=False):
         l = []
         for i in range(len(sentence)):
             word = sentence[i]
@@ -67,22 +69,50 @@ class SpellChecker(object):
                 if len(choices) == 0:
                     if fallback:
                         l.append([word])
-                if i<1:
-                    prev_word = '%'
                 else:
-                    prev_word = sentence[i-1]
+                    if i<1:
+                        prev_word = '%'
+                    else:
+                        prev_word = sentence[i-1]
 
-                if i+1 == len(sentence):
-                    next_word = '%'
-                else:
-                    next_word = sentence[i+1]
-                rank = lambda x: self.cm_score(x, word) + self.bigram_score(prev_word, x, next_word)
-                ranked = sorted(choices, key = rank, reverse=True)
-                l.append(list(ranked))
+                    if i+1 == len(sentence):
+                        next_word = '%'
+                    else:
+                        next_word = sentence[i+1]
+
+                    #rank = lambda x: self.cm_score(x, word)
+                    #rank = lambda x: self.bigram_score(prev_word, x, next_word)
+                    rank = lambda x: self._combine_scores(self.cm_score(x, word), self.bigram_score(prev_word, x, next_word))
+                    ranked = sorted(choices, key = rank, reverse=False)
+                    l.append(list(ranked))
 
 
         return l
 
+    def _combine_scores(self, cm_score, bigram_score):
+        return 10*cm_score + bigram_score
+
 
     def _one_step(self, word):
         return self.inserts(word) + self.deletes(word) + self.substitutions(word)
+
+    def autocorrect_sentence(self, sentence):
+        options = self.check_sentence(sentence, fallback=True)
+        print(options)
+        return [x[0] for x in options]
+
+    def suggest_sentence(self, sentence, max_suggestions):
+        options = self.check_sentence(sentence)
+        get = lambda x: x[0] if len(x) == 0 else x[:max_suggestions]
+        return [get(x) for x in options]
+
+
+s = SpellChecker(5)
+
+with open('lm.pkl', 'rb') as fp:
+    s.load_language_model(fp)
+
+with open('ed.pkl','rb') as fp:
+    s.load_channel_model(fp)
+
+print(s.suggest_sentence(['it', 'was', 'the', 'best', 'of', 'times', 'it', 'was', 'the', 'borst', 'of', 'times'], 4))
