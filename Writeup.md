@@ -43,7 +43,7 @@ The function itself checks if a given word is in the vocabulary. The naming conv
 
 6. Spacy uses a lot of memory if it tries to load a very large document. To avoid that problem, `LanguageModel` limits the amount of text that’s processed at once with the `get_chunks` method. Explain how that method works.
 
-`get_chunks` uses the python `yield` to return the first (then second... then nth) "chunk" of the files it was given. the `yield` + `for chunk in` combination lets us generate the next value of the iterator when needed for all the chunks in all the files.
+`get_chunks` uses the python `yield` to return the first (then second... then nth) "chunk" of the files it was given. the `yield` + `for chunk in` combination lets us generate the next value of the iterator when needed for all the chunks in all the files. practically it lets us go through the whole set of files while only holding one chunk_size worth of the files at a time.
 
 
 7. Describe the command-line interface for `LanguageModel.py`. What command should you run to generate a model from `/data/gutenberg/*.txt` and save it to `lm.pkl` if you want an alpha value of 0.1 and a vocabulary size of 40000?
