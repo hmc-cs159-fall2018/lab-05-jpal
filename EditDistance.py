@@ -15,8 +15,12 @@ import pickle
 import string
 import sys
 
+transpose = True
+
+
 class EditDistanceFinder():
     DEL, SUB, INS = range(3)
+    TRANS = 3
     BLANK = '%'
     UNK = '~'
     ALPHA = string.ascii_lowercase + BLANK + UNK
@@ -99,9 +103,15 @@ class EditDistanceFinder():
                 this_ins = (table['cost'][i-1,j] + self.ins_cost(observed_word[i-1]), self.INS)
                 this_del = (table['cost'][i,j-1] + self.del_cost(intended_word[j-1]), self.DEL)
                 this_sub = (table['cost'][i-1,j-1] + self.sub_cost(observed_word[i-1], intended_word[j-1]), self.SUB)
-                
-                table[i,j] = min((this_del, this_sub, this_ins))
-                
+                this_trans = (float('inf'),self.TRANS)
+                if transpose and (i-2>-1) and (j-2>-1):
+                    match1 = observed_word[i-1] == intended_word[j-2]
+                    match2 = observed_word[i-2] == intended_word[j-1]
+                    if match1 and match2:
+                        cost = table['cost'][i-2,j-2] + self.trans_cost(observed_word[i-2],observed_word[i-1])
+                        this_trans = (cost, self.TRANS)
+                table[i,j] = min((this_del, this_sub, this_ins, this_trans))
+
         return table
     
     def _do_trace(self, observed_word, intended_word, table):
@@ -140,7 +150,12 @@ class EditDistanceFinder():
             intended_char = self.UNK
         if observed_char == intended_char: return 0
         else: return 1-self.probs[intended_char][observed_char]
-        
+
+    def trans_cost(self, first_char, second_char):
+        cost1 = self.sub_cost(first_char, second_char)
+        cost2 = self.sub_cost(second_char,first_char)
+        return (cost1+cost2)*0.5
+
     def show_alignment(self, alignments):
         observed, intended = list(zip(*alignments))
         print("Observed Word:", " ".join(observed))

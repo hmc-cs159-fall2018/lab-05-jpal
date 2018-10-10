@@ -3,6 +3,7 @@ from EditDistance import EditDistanceFinder
 from LanguageModel import LanguageModel
 import string
 
+transpose = True
 
 class SpellChecker(object):
 
@@ -45,6 +46,12 @@ class SpellChecker(object):
         for i in range(len(word)):
             for char in string.ascii_lowercase:
                 l.append(word[:i] + char + word[i+1:])
+        return [x for x in l if x in self.language_model]
+
+    def transposes(self, word):
+        l = []
+        for i in range(1,len(word)):
+            l.append(word[:i-1] + word[i] + word[i-1] + word[i+1:])
         return [x for x in l if x in self.language_model]
 
     def cm_score(self, error_word, corrected_word):
@@ -90,12 +97,15 @@ class SpellChecker(object):
         return l
 
     def _combine_scores(self, cm_score, bigram_score,unigram_score):
-        return cm_score + 0.5*(bigram_score+unigram_score)
+        return cm_score - 0.5*(bigram_score+unigram_score)
 
 
 
     def _one_step(self, word):
-        return self.inserts(word) + self.deletes(word) + self.substitutions(word)
+        if transpose:
+            return self.inserts(word) + self.deletes(word) + self.substitutions(word) + self.transposes(word)
+        else:
+            return self.inserts(word) + self.deletes(word) + self.substitutions(word)
 
     def autocorrect_sentence(self, sentence):
         options = self.check_sentence(sentence, fallback=True)
@@ -118,7 +128,7 @@ class SpellChecker(object):
         return self._spacy_map(text, func)
 
     def _spacy_map(self, text, function):
-        doc = self.nlp(text)
+        doc = self.nlp(text.lower())
         l = []
         for sentence in doc.sents:
             stringlist = [str(x) for x in sentence]
@@ -140,3 +150,5 @@ if __name__ == "__main__":
     print(s.suggest_sentence(['it', 'was', 'the', 'best', 'of', 'times', 'it', 'was', 'the', 'blurst', 'of', 'times'], 4))
 
     print(s.suggest_text("one fish. two fish. red fish. blue fish.", 4))
+
+    print(s.suggest_text("you are teh best", 4))
