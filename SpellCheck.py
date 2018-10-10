@@ -62,7 +62,7 @@ class SpellChecker(object):
         l = []
         for i in range(len(sentence)):
             word = sentence[i]
-            if word in self.language_model:
+            if (word in self.language_model) or (word in string.punctuation):
                 l.append([word])
             else:
                 choices = self.generate_candidates(word)
@@ -71,26 +71,27 @@ class SpellChecker(object):
                         l.append([word])
                 else:
                     if i<1:
-                        prev_word = '%'
+                        prev_word = '<s>'
                     else:
                         prev_word = sentence[i-1]
 
                     if i+1 == len(sentence):
-                        next_word = '%'
+                        next_word = '</s>'
                     else:
                         next_word = sentence[i+1]
 
                     #rank = lambda x: self.cm_score(x, word)
                     #rank = lambda x: self.bigram_score(prev_word, x, next_word)
-                    rank = lambda x: self._combine_scores(self.cm_score(x, word), self.bigram_score(prev_word, x, next_word))
+                    rank = lambda x: self._combine_scores(self.cm_score(x, word), self.bigram_score(prev_word, x, next_word), self.unigram_score(x))
                     ranked = sorted(choices, key = rank, reverse=False)
                     l.append(list(ranked))
 
 
         return l
 
-    def _combine_scores(self, cm_score, bigram_score):
-        return 10*cm_score + bigram_score
+    def _combine_scores(self, cm_score, bigram_score,unigram_score):
+        return cm_score + 0.5*(bigram_score+unigram_score)
+
 
 
     def _one_step(self, word):
@@ -106,6 +107,28 @@ class SpellChecker(object):
         get = lambda x: x[0] if len(x) == 0 else x[:max_suggestions]
         return [get(x) for x in options]
 
+    def check_text(self, text, fallback=False):
+        func = lambda x: self.check_sentence(x, fallback)
+        return self._spacy_map(text, func)
+
+    def autocorrect_line(self, line):
+        return self._spacy_map(text, self.autocorrect_sentence)
+
+    def suggest_text(self, text, max_suggestions):
+        func = lambda x: self.suggest_sentence(x, max_suggestions)
+        return self._spacy_map(text, func)
+
+    def _spacy_map(self, text, function):
+        doc = self.nlp(text)
+        l = []
+        for sentence in doc.sents:
+            stringlist = [str(x) for x in sentence]
+            l += function(stringlist)
+        return l
+
+
+
+
 
 s = SpellChecker(5)
 
@@ -115,4 +138,6 @@ with open('lm.pkl', 'rb') as fp:
 with open('ed.pkl','rb') as fp:
     s.load_channel_model(fp)
 
-print(s.suggest_sentence(['it', 'was', 'the', 'best', 'of', 'times', 'it', 'was', 'the', 'borst', 'of', 'times'], 4))
+print(s.suggest_sentence(['it', 'was', 'the', 'best', 'of', 'times', 'it', 'was', 'the', 'blurst', 'of', 'times'], 4))
+
+print(s.suggest_text("one fish. two fish. red fish. blue fish.", 4))
