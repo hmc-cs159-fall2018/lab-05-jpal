@@ -55,3 +55,41 @@ our command:
 however some of these args use default values equal to what we want so this should be equivalent:
 
 `python LanguageModel.py -s lm.pkl /data/gutenberg/*.txt`
+
+
+6. How often did your spell checker do a better job of correcting than ispell? Conversely, how often did ispell do a better job than your spell checker?
+
+I had difficulty using diff because the output of auto spell was not the same as that of the ispell file. I could have fixes this but I ran out of time.
+
+
+7. Can you characterize the type of errors your spell checker tended to best at, and the type of errors ispell tended to do best at?
+
+8. Comment on anything else you notice that is interesting about spell checking – either for your model or for ispell.
+
+I lowercased at the wrong time and my spellcheck is really bad at names now
+
+Tokenization ruins a common mistake I see of adding the space too early (int he) vs (in the)
+
+
+# Transpositions
+
+9. Describe your approach
+
+I'm going to add Transpositions to the generated list of words, then add this metric to the edit distance finder. Either part without the other would lead to different results
+For a very simple way of calculating transpose cost, I'm averaging taking the two substitution costs.
+
+10. Give examples of how your approach works, including specific sentences where your new model gives a different (hopefully better!) result than the baseline model.
+
+Old behavior:
+
+`s.suggest_text('this is the bset',4) => [['this'], ['is'], ['the'], ['sea', 'lord', 'son', 'be']]`
+
+New behavior:
+
+`s.suggest_text('this is the bset',4) => [['this'], ['is'], ['the'], ['sea', 'best', 'lord', 'son']]`
+
+It still REALLY likes the sea (i think old books will give you that bias) but now it suggests 'best' at least at number 2
+
+11. Discuss any challenges you ran into, design decisions you made, etc.
+
+The actual "probability" of swapping was never learned (I didn't teach it to do that) so my probabilities are very much off. It works! but not as well as a real model would.

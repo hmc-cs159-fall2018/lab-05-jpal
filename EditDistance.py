@@ -130,6 +130,12 @@ class EditDistanceFinder():
             elif this_backtrace == self.DEL:
                 j -= 1
                 alignments.append((self.BLANK, intended_word[j]))
+            elif this_backtrace == self.TRANS:
+                i -= 2
+                j -= 2
+                alignments.append((observed_word[i+1],intended_word[j+1]))
+                alignments.append((observed_word[i],intended_word[j]))
+
 
         return list(reversed(alignments))
     

@@ -69,7 +69,7 @@ class SpellChecker(object):
         l = []
         for i in range(len(sentence)):
             word = sentence[i]
-            if (word in self.language_model) or (word in string.punctuation):
+            if (word in self.language_model) or (word in string.punctuation) or word == '\n':
                 l.append([word])
             else:
                 choices = self.generate_candidates(word)
