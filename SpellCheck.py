@@ -99,7 +99,6 @@ class SpellChecker(object):
 
     def autocorrect_sentence(self, sentence):
         options = self.check_sentence(sentence, fallback=True)
-        print(options)
         return [x[0] for x in options]
 
     def suggest_sentence(self, sentence, max_suggestions):
@@ -112,7 +111,7 @@ class SpellChecker(object):
         return self._spacy_map(text, func)
 
     def autocorrect_line(self, line):
-        return self._spacy_map(text, self.autocorrect_sentence)
+        return self._spacy_map(line, self.autocorrect_sentence)
 
     def suggest_text(self, text, max_suggestions):
         func = lambda x: self.suggest_sentence(x, max_suggestions)
@@ -129,15 +128,15 @@ class SpellChecker(object):
 
 
 
+if __name__ == "__main__":
+    s = SpellChecker(5)
 
-s = SpellChecker(5)
+    with open('lm.pkl', 'rb') as fp:
+        s.load_language_model(fp)
 
-with open('lm.pkl', 'rb') as fp:
-    s.load_language_model(fp)
+    with open('ed.pkl','rb') as fp:
+        s.load_channel_model(fp)
 
-with open('ed.pkl','rb') as fp:
-    s.load_channel_model(fp)
+    print(s.suggest_sentence(['it', 'was', 'the', 'best', 'of', 'times', 'it', 'was', 'the', 'blurst', 'of', 'times'], 4))
 
-print(s.suggest_sentence(['it', 'was', 'the', 'best', 'of', 'times', 'it', 'was', 'the', 'blurst', 'of', 'times'], 4))
-
-print(s.suggest_text("one fish. two fish. red fish. blue fish.", 4))
+    print(s.suggest_text("one fish. two fish. red fish. blue fish.", 4))

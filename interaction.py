@@ -32,11 +32,13 @@ if __name__ == "__main__":
     >>> [['they'], ['did'], ['not'], ['by', 'b', 'ye', 'y', 'yo', 'ob', 'ya', 'ab'], ['any'], 
     >>>  ['means', 'mens', 'mena', 'zenas', 'menan', 'mends']]
     """
+    print()
 
     print(s.autocorrect_line("they did not yb any menas"))
     """
     >>> ['they', 'did', 'not', 'by', 'any', 'means']
     """
+    print()
 
     print(s.suggest_text("they did not yb any menas", max_suggestions=2))
     """
